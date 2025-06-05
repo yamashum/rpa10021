@@ -2,8 +2,10 @@
 
 import json
 import os
+import logging
 from typing import Any, Dict, List
 
+logger = logging.getLogger(__name__)
 try:
     import pyautogui
 except ImportError:  # pragma: no cover - optional dependency
@@ -21,6 +23,7 @@ class Step:
         self.params = params
 
     def execute(self) -> None:
+        logger.info("Executing action: %s", self.action)
         if self.action == 'click':
             self._click()
         elif self.action == 'input':
@@ -39,18 +42,21 @@ class Step:
             raise RuntimeError('pyautogui is required for click action')
         x = self.params.get('x')
         y = self.params.get('y')
+        logger.info("Click at (%s, %s)", x, y)
         pyautogui.click(x, y)
 
     def _input(self) -> None:
         if not pyautogui:
             raise RuntimeError('pyautogui is required for input action')
         text = self.params.get('text', '')
+        logger.info("Input text: %s", text)
         pyautogui.write(text)
 
     def _screenshot(self) -> None:
         if not pyautogui:
             raise RuntimeError('pyautogui is required for screenshot action')
         path = self.params.get('path', 'screenshot.png')
+        logger.info("Save screenshot to %s", path)
         image = pyautogui.screenshot()
         image.save(path)
 
@@ -59,6 +65,7 @@ class Step:
         dst = self.params.get('dst')
         if not src or not dst:
             raise ValueError('file_copy requires src and dst')
+        logger.info("Copying %s to %s", src, dst)
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
                 fdst.write(fsrc.read())
@@ -76,6 +83,7 @@ class Step:
         else:
             wb = openpyxl.Workbook()
         ws = wb.active
+        logger.info("Writing %s to %s in %s", value, cell, path)
         ws[cell] = value
         wb.save(path)
 
@@ -92,8 +100,10 @@ class Workflow:
         return cls(steps)
 
     def run(self) -> None:
+        logger.info("Starting workflow with %d steps", len(self.steps))
         for step in self.steps:
             step.execute()
+        logger.info("Workflow finished")
 
 if __name__ == '__main__':  # pragma: no cover - manual execution
     import argparse

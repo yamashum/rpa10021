@@ -1,6 +1,8 @@
 import logging
 import pytest
 
+import json
+from rpa import run_workflow
 from rpa.workflow import Step, StepType, execute_step
 
 
@@ -28,3 +30,19 @@ def test_condition_step_or_operator():
                 payload={"conditions": [False, True], "operator": "or"})
     result = execute_step(step)
     assert result is True
+
+
+def test_run_workflow_executes_steps(tmp_path, caplog):
+    steps = [
+        {"step_type": "click"},
+        {"step_type": "condition", "payload": {"conditions": [True], "operator": "and"}},
+    ]
+    wf_file = tmp_path / "wf.json"
+    wf_file.write_text(json.dumps(steps))
+
+    with caplog.at_level(logging.INFO):
+        run_workflow(str(wf_file))
+
+    text = caplog.text
+    assert "Executing click step" in text
+    assert "Condition evaluated" in text

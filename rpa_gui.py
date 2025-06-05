@@ -13,7 +13,9 @@ class QTextEditLogger(logging.Handler):
     def __init__(self, widget: QtWidgets.QTextEdit):
         super().__init__()
         self.widget = widget
-        self.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        self.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
 
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
@@ -29,13 +31,18 @@ class StepDialog(QtWidgets.QDialog):
         self.layout = QtWidgets.QFormLayout(self)
 
         self.action_combo = QtWidgets.QComboBox()
-        self.action_combo.addItems([
-            "click",
-            "input",
-            "screenshot",
-            "file_copy",
-            "excel_write",
-        ])
+        self.action_combo.addItems(
+            [
+                "click",
+                "input",
+                "screenshot",
+                "file_copy",
+                "excel_write",
+                "if",
+                "for",
+                "notify",
+            ]
+        )
         self.layout.addRow("Action", self.action_combo)
         self.param_edits: Dict[str, QtWidgets.QLineEdit] = {}
 
@@ -71,6 +78,13 @@ class StepDialog(QtWidgets.QDialog):
             self.param_edits["path"] = QtWidgets.QLineEdit()
             self.param_edits["cell"] = QtWidgets.QLineEdit()
             self.param_edits["value"] = QtWidgets.QLineEdit()
+        elif action == "if":
+            self.param_edits["condition"] = QtWidgets.QLineEdit()
+        elif action == "for":
+            self.param_edits["count"] = QtWidgets.QLineEdit("1")
+        elif action == "notify":
+            self.param_edits["message"] = QtWidgets.QLineEdit()
+            self.param_edits["email"] = QtWidgets.QLineEdit()
 
         for name, widget in self.param_edits.items():
             self.layout.insertRow(self.layout.rowCount() - 1, name, widget)
@@ -136,7 +150,9 @@ class MainWindow(QtWidgets.QWidget):
             self.step_list.takeItem(row)
 
     def load_workflow(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load Workflow", "", "JSON (*.json)")
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Workflow", "", "JSON (*.json)"
+        )
         if not path:
             return
         with open(path, "r", encoding="utf-8") as f:
@@ -146,15 +162,23 @@ class MainWindow(QtWidgets.QWidget):
             self.step_list.addItem(json.dumps(step, ensure_ascii=False))
 
     def save_workflow(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save Workflow", "workflow.json", "JSON (*.json)")
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save Workflow", "workflow.json", "JSON (*.json)"
+        )
         if not path:
             return
-        steps = [json.loads(self.step_list.item(i).text()) for i in range(self.step_list.count())]
+        steps = [
+            json.loads(self.step_list.item(i).text())
+            for i in range(self.step_list.count())
+        ]
         with open(path, "w", encoding="utf-8") as f:
             json.dump(steps, f, ensure_ascii=False, indent=2)
 
     def run_workflow(self) -> None:
-        steps = [json.loads(self.step_list.item(i).text()) for i in range(self.step_list.count())]
+        steps = [
+            json.loads(self.step_list.item(i).text())
+            for i in range(self.step_list.count())
+        ]
         workflow_steps = [Step(s["action"], s.get("params", {})) for s in steps]
         workflow = Workflow(workflow_steps)
         try:

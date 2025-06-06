@@ -1,6 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,12 @@ def execute_step(step: Step):
     elif step.step_type == StepType.LOOP:
         logger.info("Executing loop step")
     elif step.step_type == StepType.WAIT:
-        logger.info("Executing wait step")
+        seconds = 0
+        if step.payload is not None:
+            seconds = step.payload.get("seconds", 0)
+        logger.info("Executing wait step for %s seconds", seconds)
+        if seconds > 0:
+            time.sleep(seconds)
     elif step.step_type == StepType.NOTIFY:
         logger.info("Executing notify step")
     else:

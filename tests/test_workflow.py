@@ -23,8 +23,17 @@ def test_condition_step_logs(caplog):
     assert "conditional step" in caplog.text
 
 
-def test_wait_step_logs(caplog):
-    step = Step(step_type=StepType.WAIT)
+def test_wait_step_logs_and_sleeps(monkeypatch, caplog):
+    recorded = {}
+
+    def fake_sleep(seconds):
+        recorded["seconds"] = seconds
+
+    monkeypatch.setattr("rpa.workflow.time.sleep", fake_sleep)
+
+    step = Step(step_type=StepType.WAIT, payload={"seconds": 2})
     with caplog.at_level(logging.INFO):
         execute_step(step)
-    assert "wait step" in caplog.text
+
+    assert recorded.get("seconds") == 2
+    assert "wait step for 2 seconds" in caplog.text

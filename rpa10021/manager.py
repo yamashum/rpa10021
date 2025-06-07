@@ -1,4 +1,5 @@
 import pyautogui
+import time
 
 class StepManager:
     def __init__(self, workflow=None):
@@ -13,3 +14,8 @@ class StepManager:
             elif action == 'typewrite':
                 text = step.get('text', '')
                 pyautogui.typewrite(text)
+            elif action == 'wait':
+                seconds = step.get('seconds', 0)
+                if seconds:
+                    time.sleep(seconds)
+

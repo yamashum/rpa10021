@@ -40,6 +40,7 @@ class StepDialog(QtWidgets.QDialog):
                 "excel_write",
                 "if",
                 "for",
+                "wait",
                 "notify",
             ]
         )
@@ -82,6 +83,8 @@ class StepDialog(QtWidgets.QDialog):
             self.param_edits["condition"] = QtWidgets.QLineEdit()
         elif action == "for":
             self.param_edits["count"] = QtWidgets.QLineEdit("1")
+        elif action == "wait":
+            self.param_edits["seconds"] = QtWidgets.QLineEdit("1")
         elif action == "notify":
             self.param_edits["message"] = QtWidgets.QLineEdit()
             self.param_edits["email"] = QtWidgets.QLineEdit()

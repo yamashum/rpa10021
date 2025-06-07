@@ -1,14 +1,14 @@
 import argparse
 import json
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from .workflow import Step, StepType, execute_step
 
 logger = logging.getLogger(__name__)
 
 
-def load_steps(file_path: str) -> list[Step]:
+def load_steps(file_path: str) -> List[Step]:
     """Load workflow steps from a JSON file."""
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -27,7 +27,7 @@ def run_workflow(file_path: str) -> None:
         execute_step(step)
 
 
-def main(argv: Optional[list[str]] = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Run RPA workflow")
     parser.add_argument("workflow", nargs="?", default="workflow.json",
                         help="Path to workflow JSON file")

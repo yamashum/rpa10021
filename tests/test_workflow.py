@@ -90,3 +90,16 @@ def test_run_workflow_with_loop(tmp_path, caplog):
     text = caplog.text
     assert text.count("Executing click step") == 2
     assert text.count("Executing input step") == 2
+
+
+def test_load_steps_with_invalid_type_logs_error(tmp_path, caplog):
+    steps = [
+        {"step_type": "nonexistent"}
+    ]
+    wf_file = tmp_path / "bad.json"
+    wf_file.write_text(json.dumps(steps))
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(ValueError):
+            run_workflow(str(wf_file))
+    assert "Unknown step type" in caplog.text

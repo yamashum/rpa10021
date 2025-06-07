@@ -8,7 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_step(entry: dict) -> Step:
-    stype = StepType(entry["step_type"])
+    """Convert a raw dict into a ``Step`` instance."""
+    try:
+        stype = StepType(entry["step_type"])
+    except Exception as exc:  # StepType lookup failed
+        logger.error("Unknown step type %s", entry.get("step_type"))
+        raise
+
     payload = entry.get("payload") or {}
     if stype == StepType.LOOP:
         sub_entries = payload.get("steps", [])

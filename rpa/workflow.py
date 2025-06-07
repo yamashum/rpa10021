@@ -1,5 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
+from typing import Optional
 import logging
 import time
 
@@ -21,7 +22,7 @@ class StepType(Enum):
 @dataclass
 class Step:
     step_type: Enum
-    payload: dict | None = None
+    payload: Optional[dict] = None
 
 
 def execute_step(step: Step):

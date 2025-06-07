@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from PySide6 import QtWidgets, QtCore
 
@@ -25,7 +25,7 @@ class QTextEditLogger(logging.Handler):
 class StepDialog(QtWidgets.QDialog):
     """Dialog to create or edit a step."""
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("Add Step")
         self.layout = QtWidgets.QFormLayout(self)
@@ -40,6 +40,7 @@ class StepDialog(QtWidgets.QDialog):
                 "excel_write",
                 "if",
                 "for",
+                "wait",
                 "notify",
             ]
         )
@@ -82,6 +83,8 @@ class StepDialog(QtWidgets.QDialog):
             self.param_edits["condition"] = QtWidgets.QLineEdit()
         elif action == "for":
             self.param_edits["count"] = QtWidgets.QLineEdit("1")
+        elif action == "wait":
+            self.param_edits["seconds"] = QtWidgets.QLineEdit("1")
         elif action == "notify":
             self.param_edits["message"] = QtWidgets.QLineEdit()
             self.param_edits["email"] = QtWidgets.QLineEdit()

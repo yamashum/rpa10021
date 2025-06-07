@@ -3,6 +3,7 @@
 import json
 import os
 import logging
+import time
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class Step:
             self._if()
         elif self.action == "for":
             self._for()
+        elif self.action == "wait":
+            self._wait()
         elif self.action == "notify":
             self._notify()
         else:
@@ -108,6 +111,12 @@ class Step:
         for _ in range(count):
             for step in steps:
                 step.execute()
+
+    def _wait(self) -> None:
+        seconds = int(self.params.get("seconds", 0))
+        logger.info("Waiting for %s seconds", seconds)
+        if seconds > 0:
+            time.sleep(seconds)
 
     def _notify(self) -> None:
         message = self.params.get("message", "")

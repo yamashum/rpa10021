@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from PySide6 import QtWidgets, QtCore
 
@@ -25,7 +25,7 @@ class QTextEditLogger(logging.Handler):
 class StepDialog(QtWidgets.QDialog):
     """Dialog to create or edit a step."""
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle("Add Step")
         self.layout = QtWidgets.QFormLayout(self)

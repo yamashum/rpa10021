@@ -7,16 +7,20 @@ from .workflow import Step, StepType, execute_step
 logger = logging.getLogger(__name__)
 
 
+def _parse_step(entry: dict) -> Step:
+    stype = StepType(entry["step_type"])
+    payload = entry.get("payload") or {}
+    if stype == StepType.LOOP:
+        sub_entries = payload.get("steps", [])
+        payload["steps"] = [_parse_step(e) for e in sub_entries]
+    return Step(step_type=stype, payload=payload)
+
+
 def load_steps(file_path: str) -> list[Step]:
     """Load workflow steps from a JSON file."""
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    steps = []
-    for entry in data:
-        stype = StepType(entry["step_type"])
-        payload = entry.get("payload")
-        steps.append(Step(step_type=stype, payload=payload))
-    return steps
+    return [_parse_step(entry) for entry in data]
 
 
 def run_workflow(file_path: str) -> None:

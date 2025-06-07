@@ -76,6 +76,23 @@ Web要素／デスクトップ要素／座標点／画像／Excel／ファイル
 - 要素保存：`elements.json`
 - ログ出力：`logs/yyyymmdd_HHMM.log`
 
+### workflow.json サンプル
+
+```json
+[
+  {
+    "step_type": "loop",
+    "payload": {
+      "count": 2,
+      "steps": [
+        {"step_type": "click"},
+        {"step_type": "input"}
+      ]
+    }
+  }
+]
+```
+
 ---
 
 ## 7. 🔐 セキュリティ・ポリシー

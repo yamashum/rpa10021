@@ -10,6 +10,7 @@ class StepType(Enum):
     INPUT = "input"
     CONDITION = "condition"
     FILE_COPY = "file_copy"
+    LOOP = "loop"
 
 @dataclass
 class Step:
@@ -45,6 +46,16 @@ def execute_step(step: Step):
             raise ValueError(f"Invalid operator: {operator}")
         logger.info("Condition evaluated to %s", result)
         return result
+    elif step.step_type == StepType.LOOP:
+        payload = step.payload or {}
+        count = int(payload.get("count", 1))
+        sub_steps = payload.get("steps", [])
+        if not isinstance(sub_steps, list):
+            raise ValueError("steps must be a list")
+        for i in range(count):
+            logger.info("Loop iteration %s/%s", i + 1, count)
+            for sub in sub_steps:
+                execute_step(sub)
     else:
         logger.error("Unknown StepType: %s", step.step_type)
         raise ValueError(f"Unknown StepType: {step.step_type}")

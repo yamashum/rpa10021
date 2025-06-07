@@ -42,6 +42,16 @@ def test_file_copy_step(tmp_path):
     assert dst.read_text() == "data"
 
 
+def test_loop_step_executes_sub_steps(caplog):
+    sub_steps = [Step(step_type=StepType.CLICK), Step(step_type=StepType.INPUT)]
+    step = Step(step_type=StepType.LOOP, payload={"count": 2, "steps": sub_steps})
+    with caplog.at_level(logging.INFO):
+        execute_step(step)
+    text = caplog.text
+    assert text.count("Executing click step") == 2
+    assert text.count("Executing input step") == 2
+
+
 def test_run_workflow_executes_steps(tmp_path, caplog):
     steps = [
         {"step_type": "click"},
@@ -56,3 +66,27 @@ def test_run_workflow_executes_steps(tmp_path, caplog):
     text = caplog.text
     assert "Executing click step" in text
     assert "Condition evaluated" in text
+
+
+def test_run_workflow_with_loop(tmp_path, caplog):
+    steps = [
+        {
+            "step_type": "loop",
+            "payload": {
+                "count": 2,
+                "steps": [
+                    {"step_type": "click"},
+                    {"step_type": "input"}
+                ]
+            }
+        }
+    ]
+    wf_file = tmp_path / "loop.json"
+    wf_file.write_text(json.dumps(steps))
+
+    with caplog.at_level(logging.INFO):
+        run_workflow(str(wf_file))
+
+    text = caplog.text
+    assert text.count("Executing click step") == 2
+    assert text.count("Executing input step") == 2

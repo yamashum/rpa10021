@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 from PySide6 import QtWidgets, QtCore
 
@@ -25,9 +25,9 @@ class QTextEditLogger(logging.Handler):
 class StepDialog(QtWidgets.QDialog):
     """Dialog to create or edit a step."""
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None, step: Optional[Dict[str, Any]] = None):
         super().__init__(parent)
-        self.setWindowTitle("Add Step")
+        self.setWindowTitle("Add Step" if step is None else "Edit Step")
         self.layout = QtWidgets.QFormLayout(self)
 
         self.action_combo = QtWidgets.QComboBox()
@@ -47,7 +47,12 @@ class StepDialog(QtWidgets.QDialog):
         self.param_edits: Dict[str, QtWidgets.QLineEdit] = {}
 
         self.action_combo.currentTextChanged.connect(self._build_fields)
+        if step is not None:
+            self.action_combo.setCurrentText(step.get("action", "click"))
         self._build_fields(self.action_combo.currentText())
+        if step is not None:
+            for name, widget in self.param_edits.items():
+                widget.setText(step.get("params", {}).get(name, ""))
 
         btn_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -133,6 +138,8 @@ class MainWindow(QtWidgets.QWidget):
         self.save_btn.clicked.connect(self.save_workflow)
         self.run_btn.clicked.connect(self.run_workflow)
 
+        self.step_list.itemDoubleClicked.connect(self.edit_step)
+
         self.logger = logging.getLogger("rpa_gui")
         self.logger.setLevel(logging.INFO)
         handler = QTextEditLogger(self.log_text)
@@ -143,6 +150,12 @@ class MainWindow(QtWidgets.QWidget):
         if dialog.exec() == QtWidgets.QDialog.Accepted:
             step = dialog.get_step()
             self.step_list.addItem(json.dumps(step, ensure_ascii=False))
+
+    def edit_step(self, item: QtWidgets.QListWidgetItem) -> None:
+        step = json.loads(item.text())
+        dialog = StepDialog(self, step)
+        if dialog.exec() == QtWidgets.QDialog.Accepted:
+            item.setText(json.dumps(dialog.get_step(), ensure_ascii=False))
 
     def remove_step(self) -> None:
         row = self.step_list.currentRow()

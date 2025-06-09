@@ -1,10 +1,11 @@
 import json
 import logging
+import webbrowser
 from typing import Dict, Any, List, Optional
 
 from PySide6 import QtWidgets, QtCore
 
-from rpa import Step, Workflow
+from rpa import Step, Workflow, WebElementServer
 
 
 class QTextEditLogger(logging.Handler):
@@ -94,6 +95,82 @@ class StepDialog(QtWidgets.QDialog):
         return {"action": self.action_combo.currentText(), "params": params}
 
 
+class WebElementDialog(QtWidgets.QDialog):
+    """Dialog to capture web elements via WebSocket."""
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Capture Web Elements")
+        layout = QtWidgets.QVBoxLayout(self)
+
+        url_layout = QtWidgets.QHBoxLayout()
+        self.url_edit = QtWidgets.QLineEdit()
+        self.open_btn = QtWidgets.QPushButton("Open")
+        url_layout.addWidget(self.url_edit)
+        url_layout.addWidget(self.open_btn)
+        layout.addLayout(url_layout)
+
+        self.start_btn = QtWidgets.QPushButton("Start Capture")
+        self.save_btn = QtWidgets.QPushButton("Save")
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(self.start_btn)
+        btn_layout.addWidget(self.save_btn)
+        layout.addLayout(btn_layout)
+
+        self.elem_list = QtWidgets.QListWidget()
+        layout.addWidget(self.elem_list)
+
+        self.server: WebElementServer | None = None
+        self.timer: QtCore.QTimer | None = None
+
+        self.open_btn.clicked.connect(self._open_url)
+        self.start_btn.clicked.connect(self._start_server)
+        self.save_btn.clicked.connect(self._save)
+
+    def _open_url(self) -> None:
+        url = self.url_edit.text()
+        if url:
+            webbrowser.open(url)
+
+    def _start_server(self) -> None:
+        if self.server:
+            return
+        try:
+            self.server = WebElementServer()
+            self.server.start()
+        except Exception as exc:  # pragma: no cover - GUI runtime
+            QtWidgets.QMessageBox.critical(self, "Error", str(exc))
+            self.server = None
+            return
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self._refresh)
+        self.timer.start(1000)
+        self.start_btn.setEnabled(False)
+
+    def _refresh(self) -> None:
+        if not self.server:
+            return
+        self.elem_list.clear()
+        for el in self.server.get_elements():
+            self.elem_list.addItem(json.dumps(el, ensure_ascii=False))
+
+    def _save(self) -> None:
+        if not self.server:
+            return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save Elements", "elements.json", "JSON (*.json)"
+        )
+        if not path:
+            return
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.server.get_elements(), f, ensure_ascii=False, indent=2)
+
+    def closeEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover - GUI runtime
+        if self.server:
+            self.server.stop()
+        super().closeEvent(event)
+
+
 class MainWindow(QtWidgets.QWidget):
     """Main application window with step management."""
 
@@ -118,9 +195,11 @@ class MainWindow(QtWidgets.QWidget):
         self.load_btn = QtWidgets.QPushButton("Load")
         self.save_btn = QtWidgets.QPushButton("Save")
         self.run_btn = QtWidgets.QPushButton("Run")
+        self.capture_btn = QtWidgets.QPushButton("Capture Elements")
         file_layout.addWidget(self.load_btn)
         file_layout.addWidget(self.save_btn)
         file_layout.addWidget(self.run_btn)
+        file_layout.addWidget(self.capture_btn)
         layout.addLayout(file_layout)
 
         self.log_text = QtWidgets.QTextEdit()
@@ -132,11 +211,16 @@ class MainWindow(QtWidgets.QWidget):
         self.load_btn.clicked.connect(self.load_workflow)
         self.save_btn.clicked.connect(self.save_workflow)
         self.run_btn.clicked.connect(self.run_workflow)
+        self.capture_btn.clicked.connect(self.capture_elements)
 
         self.logger = logging.getLogger("rpa_gui")
         self.logger.setLevel(logging.INFO)
         handler = QTextEditLogger(self.log_text)
         self.logger.addHandler(handler)
+
+    def capture_elements(self) -> None:
+        dialog = WebElementDialog(self)
+        dialog.exec()
 
     def add_step(self) -> None:
         dialog = StepDialog(self)
